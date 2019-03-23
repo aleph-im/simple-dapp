@@ -1,6 +1,6 @@
 {
-  "name": "productreview",
-  "description": "Product Review dApp example for NULS",
+  "name": "simple-dapp",
+  "description": "Simple message board dApp on Aleph testnet",
   "version": "1.0.0",
   "author": "Moshe Malawach",
   "private": true,
