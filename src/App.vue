@@ -18,12 +18,19 @@
       <div class="d-flex justify-content-between">
         <h1>Aleph example dApp</h1>
         <div>
-          <b-link v-if="!account" @click="register">
-            Register
-          </b-link>
-          <b-link v-if="!account" @click="login">
-            Log-In
-          </b-link>
+          <div v-if="!account" class="d-inline-block">
+            NULS
+            <p class="badge">
+              <b-link @click="nuls_register" class="mr-2">Register</b-link>
+              <b-link @click="nuls_login">Log-In</b-link>
+            </p>
+            ETH
+            <p class="badge">
+              <b-link @click="eth_register" class="mr-2">Register</b-link> 
+              <b-link @click="eth_login" class="mr-2">Log-In</b-link> 
+              <b-link @click="eth_web3_login">Web3</b-link>
+            </p>
+          </div>
           <p class="badge" v-else>
             Welcome {{get_name(account.address)}}! <b-link v-b-tooltip.hover title="Edit name" @click="edit_name">📝</b-link>
             <b-link @click="logout">
@@ -67,7 +74,8 @@
 </template>
 
 <script>
-import {aggregates, posts, nuls2} from 'aleph-js'
+import {aggregates, posts, nuls2, ethereum} from 'aleph-js'
+console.log(ethereum)
 
 var api_server = 'https://api2.aleph.im'
 var network_id = 261
@@ -94,7 +102,7 @@ export default {
       writeShow: false,
       account: null,
       chain_id: 261,
-      private_key: null,
+      mnemonics: null,
       form_body: '',
       rooms: ['hall', 'troll', 'techies'],
       channel: 'TEST'
@@ -139,38 +147,59 @@ export default {
       await sleep(100)
       await this.fetch_profile(this.account.address)
     },
-    check_pkey() {
-      if (!isHex(this.private_key)) { return false }
-      if (!this.private_key) { return false }
-      if ((this.private_key.length === 66) && (this.private_key.substring(0, 2) === '00')) {
-        this.private_key = this.private_key.substring(2, 66)
-        return true
-      }
-      if (this.private_key.length !== 64) { return false }
-      try {
-        let prvbuffer = Buffer.from(this.private_key, 'hex')
-        let pub = private_key_to_public_key(prvbuffer)
-        return true
-      } catch (e) {
-        return false
-      }
-    },
-    async register() {
+    async nuls_register() {
       let account = await nuls2.new_account()
-      alert("This is your private key, save it: " + account.private_key)
+      alert("This is are your mnemonics, save them: " + account.mnemonics)
       this.account = account
     },
-    async login() {
-      this.private_key = prompt("Please enter your private key:")
-      let account = await this.add_account(this.private_key)
+    async nuls_login() {
+      this.mnemonics = prompt("Please enter your mnemonics:")
+      let account = await this.add_account('NULS2', this.mnemonics)
       if (!account) {
         alert("Private key is invalid.")
         return
       }
     },
-    async add_account(prv) {
-      this.private_key = prv
-      let account = await nuls2.import_account({private_key: prv})
+    async eth_register() {
+      let account = await ethereum.new_account()
+      alert("This is are your mnemonics, save them: " + account.mnemonics)
+      this.account = account
+    },
+    async eth_login() {
+      this.mnemonics = prompt("Please enter your mnemonics:")
+      let account = await this.add_account('ETH', this.mnemonics)
+      if (!account) {
+        alert("Private key is invalid.")
+        return
+      }
+    },
+    async eth_web3_login() {
+      let account = null
+      if (window.ethereum) {
+        try {
+            // Request account access if needed
+            await window.ethereum.enable()
+            account = await ethereum.from_provider(window['ethereum'] || window.web3.currentProvider)
+        } catch (error) {
+            // User denied account access...
+        }
+      } else {
+        alert('not supported?')
+      }
+      console.log(account)
+      if (!account) {
+        alert("Error getting web3 account")
+        return
+      }
+      this.account = account
+    },
+    async add_account(type, mnemonics) {
+      this.mnemonics = mnemonics
+      let account = null
+      if (type == 'NULS2')
+        account = await nuls2.import_account({mnemonics: mnemonics})
+      else if (type == 'ETH')
+        account = await ethereum.import_account({mnemonics: mnemonics})
       if (account) {
         this.account = account
         await this.fetch_profile(account.address)
