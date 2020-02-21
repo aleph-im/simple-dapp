@@ -69,7 +69,7 @@
 <script>
 import {aggregates, posts, nuls2} from 'aleph-js'
 
-var api_server = 'https://apitest.aleph.im'
+var api_server = 'https://api2.aleph.im'
 var network_id = 261
 
 var hexRegEx = /([0-9]|[a-f])/gim
@@ -96,7 +96,8 @@ export default {
       chain_id: 261,
       private_key: null,
       form_body: '',
-      rooms: ['hall', 'troll', 'techies']
+      rooms: ['hall', 'troll', 'techies'],
+      channel: 'TEST'
     }
   },
   watch: {
@@ -122,14 +123,19 @@ export default {
         return this.profiles[address].name
       else
         return address
-    },
+    }, //aa90f6ea5df5cbf50f72286058f7bf134bb0cbfb7fb5bb6495ebd1490dbc3a89
     async edit_name() {
       let new_name = prompt("Please choose a name:", this.get_name(this.account.address))
-      let message = await submit_aggregate(
-        this.account.address, 'profile', {'name': new_name}, {api_server: api_server}
+      let message = await aggregates.submit(
+        this.account.address, 'profile',
+        {'name': new_name},
+        {
+          account: this.account,
+          api_server: api_server,
+          channel: this.channel
+        }
       )
-      nuls_sign(Buffer.from(this.account.private_key, 'hex'), message)
-      await broadcast(message, {api_server: api_server})
+      console.log(message)
       await sleep(100)
       await this.fetch_profile(this.account.address)
     },
@@ -180,18 +186,21 @@ export default {
     },
     async fetch_profile(address) {
       let profile = await aggregates.fetch_profile(address, {api_server: api_server})
+      console.log(profile)
       this.profiles[address] = profile
     },
     async broadcast() {
-      let msg = await create_post(
+      let msg = await posts.submit(
         this.account.address, 'chat',
-        this.form_body, {
+        {'body': this.form_body}, {
           ref: this.room,
-          api_server: api_server
+          api_server: api_server,
+          account: this.account,
+          channel: this.channel
         }
       )
-      nuls_sign(Buffer.from(this.account.private_key, 'hex'), msg)
-      await broadcast(msg, {api_server: api_server})
+      // nuls_sign(Buffer.from(this.account.private_key, 'hex'), msg)
+      // await broadcast(msg, {api_server: api_server})
       await sleep(100)
       await this.refresh()
       this.form_body = ''
