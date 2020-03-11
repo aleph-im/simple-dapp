@@ -8,7 +8,7 @@
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
-    "aleph-js": "https://github.com/aleph-im/aleph-js.git",
+    "aleph-js": "^0.1.1",
     "bootstrap-vue": "^2.1.0",
     "core-js": "^3.6.4",
     "vue": "^2.6.11"
@@ -38,8 +38,7 @@
     "extends": [
       "plugin:vue/essential"
     ],
-    "parserOptions": {
-    },
+    "parserOptions": {},
     "rules": {}
   },
   "browserslist": [
