@@ -30,6 +30,11 @@
               <b-link @click="eth_login" class="mr-2">Log-In</b-link> 
               <b-link @click="eth_web3_login">Web3</b-link>
             </p>
+            NEO
+            <p class="badge">
+              <b-link @click="neo_register" class="mr-2">Register</b-link> 
+              <b-link @click="neo_login" class="mr-2">Log-In</b-link>
+            </p>
           </div>
           <p class="badge" v-else>
             Welcome {{get_name(account.address)}}! <b-link v-b-tooltip.hover title="Edit name" @click="edit_name">📝</b-link>
@@ -74,7 +79,7 @@
 </template>
 
 <script>
-import {aggregates, posts, nuls2, ethereum} from 'aleph-js'
+import {aggregates, posts, store, nuls2, ethereum, neo} from 'aleph-js'
 console.log(ethereum)
 
 var api_server = 'https://api2.aleph.im'
@@ -103,6 +108,7 @@ export default {
       account: null,
       chain_id: 261,
       mnemonics: null,
+      wif: null,
       form_body: '',
       rooms: ['hall', 'troll', 'techies'],
       channel: 'TEST'
@@ -173,6 +179,19 @@ export default {
         return
       }
     },
+    async neo_register() {
+      let account = await neo.new_account()
+      alert("This is your private key (WIF), save them: " + account.wif)
+      this.account = account
+    },
+    async neo_login() {
+      this.wif = prompt("Please enter your private key (WIF):")
+      let account = await this.add_account('NEO', this.wif)
+      if (!account) {
+        alert("Private key is invalid.")
+        return
+      }
+    },
     async eth_web3_login() {
       let account = null
       if (window.ethereum) {
@@ -193,13 +212,15 @@ export default {
       }
       this.account = account
     },
-    async add_account(type, mnemonics) {
-      this.mnemonics = mnemonics
+    async add_account(type, word) {
+      // this.mnemonics = mnemonics
       let account = null
       if (type == 'NULS2')
-        account = await nuls2.import_account({mnemonics: mnemonics})
+        account = await nuls2.import_account({mnemonics: word})
       else if (type == 'ETH')
-        account = await ethereum.import_account({mnemonics: mnemonics})
+        account = await ethereum.import_account({mnemonics: word})
+      else if (type == 'NEO')
+        account = await neo.import_account({wif: word})
       if (account) {
         this.account = account
         await this.fetch_profile(account.address)
