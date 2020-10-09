@@ -30,10 +30,15 @@
               <b-link @click="eth_login" class="mr-2">Log-In</b-link> 
               <b-link @click="eth_web3_login">Web3</b-link>
             </p>
-            NEO
+            COSMOS
             <p class="badge">
-              <b-link @click="neo_register" class="mr-2">Register</b-link> 
-              <b-link @click="neo_login" class="mr-2">Log-In</b-link>
+              <b-link @click="cosmos_register" class="mr-2">Register</b-link> 
+              <b-link @click="cosmos_login" class="mr-2">Log-In</b-link>
+            </p>
+            POLKADOT
+            <p class="badge">
+              <b-link @click="substrate_register" class="mr-2">Register</b-link> 
+              <b-link @click="substrate_login" class="mr-2">Log-In</b-link>
             </p>
           </div>
           <p class="badge" v-else>
@@ -79,8 +84,10 @@
 </template>
 
 <script>
-import {aggregates, posts, store, nuls2, ethereum, neo} from 'aleph-js'
+import {aggregates, posts, store, nuls2, ethereum, neo, cosmos, substrate} from 'aleph-js'
+import {waitReady} from '@polkadot/wasm-crypto'
 console.log(ethereum)
+console.log(neo)
 
 var api_server = 'https://api2.aleph.im'
 var network_id = 261
@@ -179,6 +186,33 @@ export default {
         return
       }
     },
+    async cosmos_register() {
+      await waitReady()
+      let account = await cosmos.new_account()
+      alert("This is are your mnemonics, save them: " + account.mnemonics)
+      this.account = account
+    },
+    async cosmos_login() {
+      this.mnemonics = prompt("Please enter your mnemonics:")
+      let account = await this.add_account('CSDK', this.mnemonics)
+      if (!account) {
+        alert("Private key is invalid.")
+        return
+      }
+    },
+    async substrate_register() {
+      let account = await substrate.new_account()
+      alert("This is are your mnemonics, save them: " + account.mnemonics)
+      this.account = account
+    },
+    async substrate_login() {
+      this.mnemonics = prompt("Please enter your mnemonics:")
+      let account = await this.add_account('DOT', this.mnemonics)
+      if (!account) {
+        alert("Private key is invalid.")
+        return
+      }
+    },
     async neo_register() {
       let account = await neo.new_account()
       alert("This is your private key (WIF), save them: " + account.wif)
@@ -219,7 +253,12 @@ export default {
         account = await nuls2.import_account({mnemonics: word})
       else if (type == 'ETH')
         account = await ethereum.import_account({mnemonics: word})
-      else if (type == 'NEO')
+      else if (type == 'CSDK')
+        account = await cosmos.import_account({mnemonics: word})
+      else if (type == 'DOT') {
+        await waitReady()
+        account = await substrate.import_account({mnemonics: word})
+      } else if (type == 'NEO')
         account = await neo.import_account({wif: word})
       if (account) {
         this.account = account
@@ -249,6 +288,8 @@ export default {
           channel: this.channel
         }
       )
+      console.log(msg)
+      console.log(JSON.stringify(msg))
       // nuls_sign(Buffer.from(this.account.private_key, 'hex'), msg)
       // await broadcast(msg, {api_server: api_server})
       await sleep(100)
