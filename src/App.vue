@@ -40,6 +40,12 @@
               <b-link @click="substrate_register" class="mr-2">Register</b-link> 
               <b-link @click="substrate_login" class="mr-2">Log-In</b-link>
             </p>
+            TEZOS
+            <p class="badge">
+              <!-- <b-link @click="tezos_register" class="mr-2">Register</b-link> 
+              <b-link @click="tezos_login" class="mr-2">Log-In</b-link> -->
+              <b-link @click="tezos_web3_login" class="mr-2">Web3</b-link>
+            </p>
           </div>
           <p class="badge" v-else>
             Welcome {{get_name(account.address)}}! <b-link v-b-tooltip.hover title="Edit name" @click="edit_name">📝</b-link>
@@ -86,6 +92,12 @@
 <script>
 import {aggregates, posts, store, nuls2, ethereum, neo, cosmos, substrate} from 'aleph-js'
 import {waitReady} from '@polkadot/wasm-crypto'
+import { TezosToolkit } from '@taquito/taquito'
+import { BeaconWallet } from '@taquito/beacon-wallet'
+import { char2Bytes } from '@taquito/utils'
+import { RequestSignPayloadInput, SigningType } from '@airgap/beacon-sdk'
+
+
 console.log(ethereum)
 console.log(neo)
 
@@ -245,6 +257,37 @@ export default {
         return
       }
       this.account = account
+    },
+    async tezos_web3_login() {
+      const wallet = new BeaconWallet({"name": "aleph_simple_dapp"})
+      await wallet.requestPermissions({
+        network: {
+          type: 'mainnet',
+        },
+      })
+      const userAddress = await wallet.getPKH()
+      console.log(userAddress)
+      
+      const tezos = new TezosToolkit('https://YOUR_PREFERRED_RPC_URL')
+      tezos.setProvider(wallet)
+
+      const formattedInput = 'Tezos Signed Message: blah blah'
+      const bytes = char2Bytes(formattedInput);
+      const payloadBytes = '05' + '01' + char2Bytes(bytes.length+'') + bytes
+
+      const payload = {
+        signingType: SigningType.MICHELINE,
+        payload: payloadBytes,
+        sourceAddress: userAddress,
+      }
+
+      const signature = await wallet.client.requestSignPayload(payload)
+      console.log(signature)
+
+      await wallet.client.requestSignPayload({
+        signingType: SigningType.RAW,
+        payload: "blah blah",
+      })
     },
     async add_account(type, word) {
       // this.mnemonics = mnemonics
